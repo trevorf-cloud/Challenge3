@@ -28,3 +28,18 @@ else:
     print("Connection failed")
 
 print("Done")
+
+import time
+import machine
+import ubinascii
+from umqtt.robust import MQTTClient
+
+# Device/user name
+NAME = "trevor"
+
+# MQTT broker address
+MQTT_BROKER = "broker.hivemq.com"
+
+# Topics for receiving commands and sending status updates
+COMMAND_TOPIC = f"wyohack/{NAME}/led/command"
+STATUS_TOPIC  = f"wyohack/{NAME}/led/status"
