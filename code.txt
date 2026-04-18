@@ -1,0 +1,103 @@
+import network
+import time
+
+# Wi-Fi credentials
+SSID = "607 University Ave"
+PASSWORD = "Bluetruck629"
+
+# Create Wi-Fi interface and turn it on
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+
+print("Connecting to Wi-Fi...")
+
+# Try to connect if not already connected
+if not wlan.isconnected():
+    wlan.connect(SSID, PASSWORD)
+
+    # Wait until connection is successful
+    while not wlan.isconnected():
+        time.sleep(1)
+        print("Connecting...")
+
+# Check result
+if wlan.isconnected():
+    print("Connected successfully")
+    print("IP address:", wlan.ifconfig()[0])  # device network address
+else:
+    print("Connection failed")
+
+print("Done")
+
+
+
+
+
+
+import time
+import machine
+import ubinascii
+from umqtt.robust import MQTTClient
+
+# Device/user name
+NAME = "trevor"
+
+# MQTT broker address
+MQTT_BROKER = "broker.hivemq.com"
+
+# Topics for receiving commands and sending status updates
+COMMAND_TOPIC = f"wyohack/{NAME}/led/command"
+STATUS_TOPIC  = f"wyohack/{NAME}/led/status"
+
+
+
+
+# Set up the LED
+led = machine.Pin(2, machine.Pin.OUT)
+
+# Function that runs whenever an MQTT message is received
+def mqtt_callback(topic, msg):
+    global client
+
+    # Convert message to readable text
+    message = msg.decode().strip().upper()
+    print("Received:", message)
+
+    # Turn LED on and report status
+    if message == "ON":
+        led.value(1)
+        client.publish(STATUS_TOPIC, b"ON")
+
+    # Turn LED off and report status
+    elif message == "OFF":
+        led.value(0)
+        client.publish(STATUS_TOPIC, b"OFF")
+
+
+
+
+# Create a unique client ID using the device MAC address
+client_id = b"esp32_led_" + ubinascii.hexlify(machine.unique_id())
+
+# Initialize MQTT client and assign callback function
+client = MQTTClient(client_id, MQTT_BROKER)
+client.set_callback(mqtt_callback)
+
+# Connect to MQTT broker
+print("Connecting to MQTT...")
+client.connect()
+
+# Subscribe to command topic
+client.subscribe(COMMAND_TOPIC)
+print("Subscribed to:", COMMAND_TOPIC)
+
+# Continuously check for new MQTT messages
+try:
+    while True:
+        client.check_msg()
+        time.sleep(0.1)
+
+# Handle errors and cleanly disconnect from broker
+except Exception as e:
+    print("MQTT error:", e)
+    client.disconnect()

@@ -64,3 +64,29 @@ def mqtt_callback(topic, msg):
     elif message == "OFF":
         led.value(0)
         client.publish(STATUS_TOPIC, b"OFF")
+        
+        # Create a unique client ID using the device MAC address
+client_id = b"esp32_led_" + ubinascii.hexlify(machine.unique_id())
+
+# Initialize MQTT client and assign callback function
+client = MQTTClient(client_id, MQTT_BROKER)
+client.set_callback(mqtt_callback)
+
+# Connect to MQTT broker
+print("Connecting to MQTT...")
+client.connect()
+
+# Subscribe to command topic
+client.subscribe(COMMAND_TOPIC)
+print("Subscribed to:", COMMAND_TOPIC)
+
+# Continuously check for new MQTT messages
+try:
+    while True:
+        client.check_msg()
+        time.sleep(0.1)
+
+# Handle errors and cleanly disconnect from broker
+except Exception as e:
+    print("MQTT error:", e)
+    client.disconnect()
