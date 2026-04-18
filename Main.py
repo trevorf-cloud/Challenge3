@@ -43,3 +43,24 @@ MQTT_BROKER = "broker.hivemq.com"
 # Topics for receiving commands and sending status updates
 COMMAND_TOPIC = f"wyohack/{NAME}/led/command"
 STATUS_TOPIC  = f"wyohack/{NAME}/led/status"
+
+# Set up the LED
+led = machine.Pin(2, machine.Pin.OUT)
+
+# Function that runs whenever an MQTT message is received
+def mqtt_callback(topic, msg):
+    global client
+
+    # Convert message to readable text
+    message = msg.decode().strip().upper()
+    print("Received:", message)
+
+    # Turn LED on and report status
+    if message == "ON":
+        led.value(1)
+        client.publish(STATUS_TOPIC, b"ON")
+
+    # Turn LED off and report status
+    elif message == "OFF":
+        led.value(0)
+        client.publish(STATUS_TOPIC, b"OFF")
